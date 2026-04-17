@@ -607,6 +607,14 @@
       color: var(--gold);
       text-transform: uppercase;
     }
+    .error-msg {
+      display: none;
+      margin-top: 24px;
+      font-size: 0.75rem;
+      letter-spacing: 0.15em;
+      color: #c0392b;
+      text-transform: uppercase;
+    }
 
     /* ── FOOTER ── */
     footer {
@@ -889,6 +897,7 @@
     </div>
     <div class="waitlist-note reveal">No spam. No noise. One email when we launch.</div>
     <div class="success-msg" id="success-msg">✦ &nbsp; You're on the list. We'll be in touch.</div>
+    <div class="error-msg" id="error-msg">Something went wrong. Please try again.</div>
   </section>
 
   <!-- FOOTER -->
@@ -950,16 +959,37 @@
     }, { threshold: 0.1 });
     reveals.forEach(r => observer.observe(r));
 
-    // Waitlist
-    function handleSubmit() {
+    // Waitlist — Formspree
+    async function handleSubmit() {
       const email = document.getElementById('email-input').value;
       if (!email || !email.includes('@')) {
-        document.getElementById('email-input').style.borderBottom = '1px solid #c0392b';
+        document.getElementById('email-input').style.outline = '1px solid #c0392b';
         return;
       }
-      document.querySelector('.waitlist-form').style.display = 'none';
-      document.querySelector('.waitlist-note').style.display = 'none';
-      document.getElementById('success-msg').style.display = 'block';
+
+      const btn = document.querySelector('.waitlist-form button');
+      btn.textContent = 'Sending...';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('https://formspree.io/f/xnjldnwv', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+
+        if (res.ok) {
+          document.querySelector('.waitlist-form').style.display = 'none';
+          document.querySelector('.waitlist-note').style.display = 'none';
+          document.getElementById('success-msg').style.display = 'block';
+        } else {
+          throw new Error('Failed');
+        }
+      } catch {
+        btn.textContent = 'Join Waitlist';
+        btn.disabled = false;
+        document.getElementById('error-msg').style.display = 'block';
+      }
     }
 
     document.getElementById('email-input').addEventListener('keydown', e => {
